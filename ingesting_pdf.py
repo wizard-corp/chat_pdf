@@ -1,29 +1,29 @@
 import os
+
+import faiss
+import numpy as np
 import PyPDF2
+from langchain.docstore import InMemoryDocstore
+from langchain.prompts import ChatPromptTemplate, PromptTemplate
+from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.schema import Document
+from langchain.vectorstores import FAISS  # Import FAISS
+from langchain_community.chat_models import ChatOllama
+from langchain_community.document_loaders import (OnlinePDFLoader,
+                                                  UnstructuredPDFLoader)
+from langchain_community.embeddings import (HuggingFaceInstructEmbeddings,
+                                            OllamaEmbeddings)
+from langchain_community.vectorstores import Chroma
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 # import nltk
 
 # nltk.download("punkt_tab")
 
-from langchain_community.document_loaders import UnstructuredPDFLoader
-from langchain_community.document_loaders import OnlinePDFLoader
 
-from langchain_community.embeddings import (
-    OllamaEmbeddings,
-    HuggingFaceInstructEmbeddings,
-)
-from langchain.vectorstores import FAISS  # Import FAISS
-import numpy as np
-import faiss
-from langchain.docstore import InMemoryDocstore
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
 
-from langchain.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_community.chat_models import ChatOllama
-from langchain_core.runnables import RunnablePassthrough
-from langchain.retrievers.multi_query import MultiQueryRetriever
 
 
 def load_pdfs_with_pypdf2(folder_path):
@@ -68,7 +68,7 @@ def split_text_with_overlap(text):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=7500, chunk_overlap=100)
     # Ensure text is a single string
     if isinstance(text, list):
-        text = ' '.join(text)  # Join list elements into a single string if needed
+        text = " ".join(text)  # Join list elements into a single string if needed
 
     # Wrap the text in a Document object
     documents = [Document(page_content=text)]
@@ -96,10 +96,14 @@ def get_vector_embeddings(text):
     embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
 
     # Generate embeddings for the chunks
-    chunk_embeddings = embeddings.embed_documents([doc.page_content for doc in chunks])  # Extracting page_content
+    chunk_embeddings = embeddings.embed_documents(
+        [doc.page_content for doc in chunks]
+    )  # Extracting page_content
 
     # Convert chunk_embeddings to a NumPy array for FAISS
-    chunk_embeddings = np.array(chunk_embeddings)  # Convert list of lists to NumPy array
+    chunk_embeddings = np.array(
+        chunk_embeddings
+    )  # Convert list of lists to NumPy array
 
     # Create an in-memory document store
     docstore = InMemoryDocstore()  # Initialize the document store
@@ -113,15 +117,19 @@ def get_vector_embeddings(text):
         embedding_function=embeddings.embed_query,
         index=index,  # Pass the initialized index
         docstore=docstore,  # Pass the document store
-        index_to_docstore_id={}  # Empty mapping for docstore IDs
+        index_to_docstore_id={},  # Empty mapping for docstore IDs
     )
 
     # Prepare the texts and corresponding IDs for adding
     texts = [doc.page_content for doc in chunks]
-    ids = [f"doc_{i}" for i in range(len(texts))]  # Generate unique IDs for each document
+    ids = [
+        f"doc_{i}" for i in range(len(texts))
+    ]  # Generate unique IDs for each document
 
     # Add documents and their embeddings to the index
-    faiss_index.add_texts(texts=texts, embeddings=chunk_embeddings.tolist(), ids=ids)  # Ensure embeddings is in list format
+    faiss_index.add_texts(
+        texts=texts, embeddings=chunk_embeddings.tolist(), ids=ids
+    )  # Ensure embeddings is in list format
 
     return faiss_index
 
@@ -159,11 +167,14 @@ def retrieval(vector_db):
     return result
 
 
-if __name__ == "__main__":
-    # text = load_files("assets")
-    text = load_pdfs_with_pypdf2("assets")
+def main():
+    text = load_pdfs_with_pypdf2("asset")
     if len(text) == 0:
         raise ValueError("data is empty")
     vector_db = get_vector_embeddings(text)
     response = retrieval(vector_db)
     print(response)
+
+
+if __name__ == "__main__":
+    main()
