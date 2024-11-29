@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  app:
+    container_name: ${APP_HOST:-chat_pdf}
+    build: .
+    volumes:
+      - ./src/:/home/app/src/
+    environment:
+      - OLLAMA_HOST=${OLLAMA_HOST:-ollama}
+      - OLLAMA_PORT=${OLLAMA_PORT:-11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - public
+
+networks:
+  public:
+    external: true
+

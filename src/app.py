@@ -3,11 +3,14 @@ import os
 import faiss
 import numpy as np
 import PyPDF2
-from langchain.docstore import InMemoryDocstore
+# from langchain.docstore import InMemoryDocstore
+from langchain_community.docstore.in_memory import InMemoryDocstore
+
 from langchain.prompts import ChatPromptTemplate, PromptTemplate
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.schema import Document
-from langchain.vectorstores import FAISS  # Import FAISS
+# from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_community.chat_models import ChatOllama
 from langchain_community.document_loaders import (OnlinePDFLoader,
                                                   UnstructuredPDFLoader)
@@ -21,9 +24,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 # import nltk
 
 # nltk.download("punkt_tab")
-
-
-
 
 
 def load_pdfs_with_pypdf2(folder_path):
@@ -137,7 +137,8 @@ def get_vector_embeddings(text):
 def retrieval(vector_db):
     # LLM from Ollama
     local_model = "mistral"
-    llm = ChatOllama(model=local_model)
+    baseUrl = "http://" + os.environ["OLLAMA_HOST"] + ":" + os.environ["OLLAMA_PORT"]
+    llm = ChatOllama(model=local_model, base_url=baseUrl)
     QUERY_PROMPT = PromptTemplate(
         input_variables=["question"],
         template="""You are an AI language model assistant. Your task is to generate a specified
@@ -168,7 +169,7 @@ def retrieval(vector_db):
 
 
 def main():
-    text = load_pdfs_with_pypdf2("asset")
+    text = load_pdfs_with_pypdf2("src/asset")
     if len(text) == 0:
         raise ValueError("data is empty")
     vector_db = get_vector_embeddings(text)

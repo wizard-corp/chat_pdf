@@ -1,3 +1,5 @@
+https://github.com/ollama/ollama/blob/56318fb365be38253fc9abeeabc850d01be2521a/docs/faq.md#how-do-i-configure-ollama-server
+
 mermaid '''
 flowchart LR
 subgraph Query Embeddings
